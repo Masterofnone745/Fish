@@ -22,7 +22,7 @@
             width: 100%;
             height: 100%;
             background-color: rgba(30, 41, 59, 0.85); /* Semi-transparent dark background */
-            display: flex;
+            display: none;
             justify-content: center;
             align-items: center;
             z-index: 10; /* Keeps it on top of the water and UI bars */
@@ -71,7 +71,82 @@
             overflow: hidden;
            
         }
-        
+      /* map layout  styles */
+     /* Screen Manager Absolute Toggles */
+        .screen { 
+            display: none; 
+            width: 100vw; 
+            height: 100vh; 
+            position: relative; 
+        }
+
+        /* State Management Pipeline Controllers */
+        #gameContainer.state-menu #mainMenu { display: flex; }
+        #gameContainer.state-map #mapMenu { display: block; }
+        #gameContainer.state-gameplay #gameplayScreen { display: block; }
+
+        /* Main Screen Wrapper Viewport */
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: #fff;
+            overflow: hidden;
+        }
+        .lake-map {
+            width: 100%;
+            height: 100%;
+            background-color: #93c183; /* Green grass fields */
+            position: relative;
+        }
+
+        /* The giant blue pond background styling  */
+        .lake-map::before {
+            content: '';
+            position: absolute;
+            width: 85%;
+            height: 80%;
+            left: 7.5%;
+            top: 10%;
+            background-color: #0000ff; /* Bright blue lake */
+            border-radius: 50%;
+            border: 3px solid #4a4a4a;
+            z-index: 1;
+        }
+
+        /* Location Nodes style matching your mockup exactly */
+        .map-node {
+            position: absolute;
+            width: 150px;
+            height: 70px;
+            background-color: #5b8ad2;
+            border: 3px solid #4a4a4a;
+            border-radius: 50%;
+            font-size: 18px;
+            color: #333;
+            cursor: pointer;
+            z-index: 2;
+            transition: transform 0.1s ease;
+        }
+        .map-node:hover { transform: scale(1.08); background-color: #7ba6ea; }
+
+        /* Exact coordinate layout pinning nodes based on mockup positions */
+        .point-a   { left: 13%; top: 44%; }
+        .point-b1  { left: 75%; top: 45%; }
+        .point-b2  { left: 42%; top: 75%; }
+
+        /* Utility Bottom Buttons Layout */
+        .map-util {
+            position: absolute;
+            bottom: 25px;
+            padding: 15px 30px;
+            background-color: #eaeaea;
+            border: 1px solid #4a4a4a;
+            font-size: 16px;
+            z-index: 2;
+        }
+        .shop-btn { left: 40px; }
+        .inventory-btn { right: 40px; }
 
         /* UI Elements */
         .ui-overlay {
