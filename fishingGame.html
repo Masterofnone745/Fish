@@ -8,7 +8,28 @@
 </head>
 <body>
 
-    <div class="game-container">
+ <div id="gameContainer" class="state-menu">
+    
+    <div id="mainMenu" class="menu-overlay">
+        <div class="menu-box">
+            <h1 class="menu-title">FISHING GAME</h1>
+            <button id="startBtn" class="menu-button"> NEW GAME</button>
+            <button id="continueBtn" class="menu-button"> CONTINUE </button>
+        </div>
+    </div>
+
+    <div id="mapMenu" class="screen">
+        <div class="lake-map">
+            <button class="map-node point-a" data-location="1">Point A</button>
+            <button class="map-node point-b1" data-location="2">Point B</button>
+            <button class="map-node point-b2" data-location="3">Point B</button>
+            
+            <button class="map-util shop-btn" disabled>Shop</button>
+            <button class="map-util inventory-btn" disabled>Fish inventory</button>
+        </div>
+    </div>
+
+    <div id="gameplayScreen" class="screen">
         <div class="ui-overlay">
             <div class="score-display">Fish Caught: <span id="score">0</span></div>
         </div>
@@ -19,42 +40,28 @@
         </div>
 
         <div id="timerDisplay" class="game-timer">Time: 60</div>
-
-
         <div class="ground"></div>
 
         <div class="water" id="waterArea">
-           <div class="fishing-line" id="fishingLine">
-             <div class="hook"></div>
-           </div>
+            <div class="fishing-line" id="fishingLine">
+                <div class="hook"></div>
+            </div>
         </div>
 
-        <div id="mainMenu" class="menu-overlay">
-            <div class="menu-box">
-             <h1 class="menu-title">FISHING GAME</h1>
-             <button id="startBtn" class="menu-button"> NEW GAME</button>
-                <button id="continueBtn" class="menu-button"> CONTINUE </button>
-           </div>
-       </div>
-
-     <svg class="trajectory-svg" id="trajectorySvg">
-        <path id="aimArc" d="" fill="none" stroke="rgba(255, 255, 255, 0.8)" stroke-width="3" stroke-dasharray="6,4" />
-        <circle id="aimTarget" cx="0" cy="0" r="25" fill="rgba(255, 255, 255, 0.15)" stroke="#ffffff" stroke-width="2" stroke-dasharray="4,3" />
-    </svg>
+        <svg class="trajectory-svg" id="trajectorySvg">
+            <path id="aimArc" d="" fill="none" stroke="rgba(255, 255, 255, 0.8)" stroke-width="3" stroke-dasharray="6,4" />
+            <circle id="aimTarget" cx="0" cy="0" r="25" fill="rgba(255, 255, 255, 0.15)" stroke="#ffffff" stroke-width="2" stroke-dasharray="4,3" />
+        </svg>
 
         <div class="player">
             player
             <div class="rod-pivot">
-                <div class="rod" id="rod">
-                  <div class="fishing-line" id="fishingLine">
-                    <div class="hook"></div>
-                </div>
-                </div>
+                <div class="rod" id="rod"></div>
             </div>
         </div>
     </div>
 
- <script src="fishingGame.js"></script>
-
+</div>
+<script src="fishingGame.js"></script>
 </body>
 </html>
