@@ -1,23 +1,31 @@
-let  isGameActive = false; // prevents actions while in the menu
-let  gameCreated =false; // tracks if the initial fish school has been created
+// --- STATE MANAGEMENT AND GLOBAL CONSTANTS ---
+let isGameActive = false; // Prevents actions while in the menu system
+let gameCreated = false;  // Tracks if the initial fish school has been spawned
 
+// Core Screen and Interface Containers
+const gameContainer = document.getElementById('gameContainer');
+const mainMenu = document.getElementById('mainMenu'); 
+const mapMenu = document.getElementById('mapMenu');
 const waterArea = document.getElementById('waterArea');
+
+// Interactive Hardware & UI Selectors
 const rod = document.getElementById('rod');
 const fishingLine = document.getElementById('fishingLine');
 const chargeBar = document.getElementById('chargeBar');
 const scoreDisplay = document.getElementById('score');
+const timerDisplay = document.getElementById('timerDisplay');
 
-//gravity variables
-let reelVelocity=0;  //Tracks how fast the hook is moving up or down 
-const gravityPull=0.5; //constant force pulling the hook down when a fish is caught 
+// Physics Tuning Values
+let reelVelocity = 0;  // Tracks momentum metrics for line mechanics
+const gravityPull = 0.5; // Upward-resisting gravitational downward drag
 
-// Svg Trajectory elements 
+// SVG Vector Trajectory Elements
 const trajectorySvg = document.getElementById('trajectorySvg');
 const aimArc = document.getElementById('aimArc');
 const aimTarget = document.getElementById('aimTarget');
 
-// Hook state variables
-let hookState = 'IDLE'; // Possible states: 'IDLE', 'DROP', 'REEL'
+// Structural Hook Properties
+let hookState = 'IDLE'; // States: 'IDLE', 'DROP', 'REEL'
 let hookX = 0;
 let hookY = 0;
 let lineStartY = 0; 
@@ -28,11 +36,15 @@ const hookSpeed = 6;
 let score = 0;
 let isFishing = false;
 
-//timer variables
-let gameTimer= 60; // game duration in seconds
+// Time and Life Tracker Parameters
+let gameTimer = 60; 
 let countdownInterval = null;
-const timerDisplay = document.getElementById('timerDisplay');
+let activeFishes = []; 
 
+// --- NEW SPAWNING SYSTEM SETTINGS ---
+const MAX_FISH_CAP = 8;        // The absolute limit of fish allowed on screen at once
+let spawnTimerMax = 360;      // How many frames to wait between spawn checks (180 frames ≈ 3 seconds)
+let spawnCountdown = spawnTimerMax;
 
 const fishData = [
     { id: 1, top: 60,   duration: '12s'},
@@ -42,56 +54,320 @@ const fishData = [
     { id: 5, top: 300,  duration: '6s' }
 ];
 
-function createFish() {
-    waterArea.innerHTML = `
-    <div class="fishing-line" id="fishingLine">
-        <div class="hook"></div>
-    </div>  
-    `;
-    const maxSwimDistance = waterArea.clientWidth - 95; 
+// --- CORE PROCEDURAL GAME LOOPS ---
 
-    fishData.forEach(data => {
-        const fish = document.createElement('div');
-        fish.className = 'fish swimming';
-        fish.innerText = 'fish';
-        fish.style.top = `${data.top}px`;
-        fish.style.left = `0px`; 
+function spawnFishSchool() {
+    activeFishes = [];
+    document.querySelectorAll('.fish').forEach(f => f.remove());
 
-        const randomDelay = (Math.random() * -10).toFixed(2);
-        fish.style.animationDelay = `${randomDelay}s`;
-        fish.style.setProperty('--swim-distance', `${maxSwimDistance}px`);
-        fish.style.setProperty('--swim-duration', data.duration);
+    const currentWaterWidth = waterArea.clientWidth || window.innerWidth * 0.6;
+    
+    // Feature 3 preview: Let's randomize the initial count between 3 and 6 for now
+    const randomSpawnCount = Math.floor(Math.random() * 4) + 3; 
 
-        waterArea.appendChild(fish);
+    for (let i = 0; i < randomSpawnCount; i++) {
+        const fishElement = document.createElement('div');
+        fishElement.className = 'fish'; 
+        fishElement.innerText = 'fish';
+        
+        // Spawn them spread out across the water area randomly
+        const initialX = Math.random() * (currentWaterWidth - 100) + 50;
+        const initialY = Math.random() * (waterArea.clientHeight - 100) + 50;
+        
+        fishElement.style.top = `${initialY}px`;
+        fishElement.style.left = `${initialX}px`;
+        waterArea.appendChild(fishElement);
+
+        activeFishes.push({
+            element: fishElement,
+            x: initialX,
+            y: initialY,
+            speedX: (Math.random() * 1.5 + 1) * (Math.random() > 0.5 ? 1 : -1), 
+            speedY: (Math.random() * 0.8 - 0.4), // Small vertical drifting speed
+            changeDirectionTimer: Math.random() * 60 + 30, // Frames before changing behavior
+            width: 85 
+        });
+    }
+}
+
+function manageMidGameSpawning() {
+    // Only run this system if the game is active and a line isn't currently reeling a catch
+    if (!isGameActive) return;
+
+    spawnCountdown--;
+    if (spawnCountdown <= 0) {
+        // Reset the timer clock
+        spawnCountdown = spawnTimerMax;
+
+        // Count how many fish are actively swimming right now
+        if (activeFishes.length >= MAX_FISH_CAP) return;
+
+        // --- SPAWN PROBABILITY CALCULATION (Change 4) ---
+        // Base chance is 40%. Every fish caught (score) increases the chance by 10%.
+        let spawnChance = 0.40 + (score * 0.10);
+        // Cap the maximum chance at 70% so it's not completely guaranteed
+        if (spawnChance > 0.70) spawnChance = 0.70;
+
+        // Roll the virtual dice!
+        if (Math.random() < spawnChance) {
+            const currentWaterWidth = waterArea.clientWidth || window.innerWidth * 0.6;
+            
+            // Randomly select a row depth from your fishData template
+            const randomDataIndex = Math.floor(Math.random() * fishData.length);
+            const chosenDepth = fishData[randomDataIndex].top;
+
+            const fishElement = document.createElement('div');
+            fishElement.className = 'fish'; 
+            fishElement.innerText = 'fish';
+            
+            // New mid-game fish always swim in from the far edges
+            const startLeft = Math.random() > 0.5;
+            const initialX = startLeft ? -80 : currentWaterWidth + 80;
+            
+            fishElement.style.top = `${chosenDepth}px`;
+            fishElement.style.left = `${initialX}px`;
+            waterArea.appendChild(fishElement);
+
+            // Push the new swimmer into your live physics loop engine
+            activeFishes.push({
+                element: fishElement,
+                x: initialX,
+                y: chosenDepth,
+                speedX: (Math.random() * 1.5 + 1) * (startLeft ? 1 : -1), 
+                speedY: (Math.random() * 0.8 - 0.4),
+                changeDirectionTimer: Math.random() * 60 + 30,
+                width: 85 
+            });
+
+            console.log(`Dynamic spawn triggered! Success rate was ${Math.round(spawnChance * 100)}%. Total fish: ${activeFishes.length}`);
+        }
+    }
+}
+
+function startTimer() {
+    clearInterval(countdownInterval); 
+    gameTimer = 60; 
+    if (timerDisplay) timerDisplay.innerText = `Time: ${gameTimer}`;
+
+    countdownInterval = setInterval(() => {
+        if (!isGameActive) return; 
+
+        gameTimer--;
+        if (timerDisplay) timerDisplay.innerText = `Time: ${gameTimer}`;
+
+        if (gameTimer <= 0) {
+            clearInterval(countdownInterval);
+            handleGameOver(); 
+        }
+    }, 1000);
+}
+
+function handleGameOver() {
+    isGameActive = false;
+    hookState = 'IDLE';
+    isFishing = false;
+    
+    gameCreated= false;
+
+    if (mainMenu) mainMenu.style.display = 'flex'; 
+    gameContainer.className = 'state-menu';
+    
+    const menuTitle = document.querySelector('.menu-title');
+    if (menuTitle) {
+        menuTitle.innerText = `TIME'S UP! SCORE: ${score}`;
+    }
+}
+
+function resetGame(){
+    hookState = 'IDLE';
+    isFishing = false;
+    reelVelocity = 0;
+    
+    score = 0;
+    if (scoreDisplay) scoreDisplay.innerText = score;
+    if (chargeBar) chargeBar.style.width = '0%';
+    if (rod) rod.style.transform = 'rotate(-15deg)';
+    if (fishingLine) fishingLine.style.display = 'none';
+
+    spawnFishSchool();
+    startTimer();
+}
+
+// --- REAL-TIME RUNTIME PHYSICS PHYSICS LOOP ---
+
+function updatePhysicsLoop() {
+    if (!isGameActive) return;
+
+    const waterHeight = waterArea.clientHeight || 400;
+
+    if (hookState === 'DROP') {
+        hookY += hookSpeed;
+        if (fishingLine) fishingLine.style.height = `${hookY}px`;
+
+        if (hookY >= waterHeight - 20) {
+            hookState = 'REEL';
+        }
+    } 
+    else if (hookState === 'REEL') {
+        reelVelocity += gravityPull; 
+        reelVelocity *= 0.95; 
+        hookY += reelVelocity; 
+
+        if (hookY >= waterHeight - 20) {
+            hookY = waterHeight - 20;
+            reelVelocity = 0; 
+        }
+
+        if (fishingLine) fishingLine.style.height = `${hookY}px`;
+
+        if (caughtFishElement) {
+            if (chargeBar) chargeBar.style.width = '100%'; 
+            caughtFishElement.style.top = `${hookY - 15}px`;
+
+            // Updates our internal coordinate array tracking so the engine knows where it is
+            const fishDataInstance = activeFishes.find(f => f.element === caughtFishElement);
+            if (fishDataInstance) {
+                fishDataInstance.y = hookY - 15;
+            }
+        }
+
+        if (hookY <= 0) {
+            hookState = 'IDLE';
+            isFishing = false;
+            if (fishingLine) fishingLine.style.display = 'none';
+            if (chargeBar) chargeBar.style.width = '0%';
+            if (rod) rod.style.transform = 'rotate(-15deg)';
+            reelVelocity = 0; 
+
+            if (caughtFishElement) {
+                activeFishes = activeFishes.filter(f => f.element !== caughtFishElement);
+                caughtFishElement.remove(); 
+                caughtFishElement = null; 
+                
+                score++;
+                if (scoreDisplay) scoreDisplay.innerText = score;
+            }
+        }
+    }
+
+    if (hookState !== 'IDLE' && !caughtFishElement) {
+        const currentHit = checkFishCollisions();
+        if (currentHit) {
+            hookState = 'REEL';
+            caughtFishElement = currentHit;
+            
+            const fishDataInstance = activeFishes.find(f => f.element === caughtFishElement);
+            if (fishDataInstance) {
+                fishDataInstance.speed = 0; 
+            }
+            if (fishingLine) caughtFishElement.style.left = window.getComputedStyle(fishingLine).left;
+        }
+    }
+
+    if (hookState !== 'IDLE') {
+        requestAnimationFrame(updatePhysicsLoop);
+    }
+}
+
+function updateFishMovement() {
+    const screenWidth = waterArea.clientWidth || window.innerWidth * 0.6;
+    const screenHeight = waterArea.clientHeight || 400;
+
+    activeFishes.forEach(fish => {
+        // If the fish is caught, don't run regular swimming AI
+        if(caughtFishElement && fish.element === caughtFishElement) {
+            //keep internal speed track zero when on hook
+            fish.speedX = 0;
+            fish.speedY = 0;
+            return; // Skip the rest of the movement logic for this fish 
+        }
+        // --- ERRATIC MOVEMENT GENERATOR (Change 2) ---
+        fish.changeDirectionTimer--;
+        if (fish.changeDirectionTimer <= 0) {
+            // Randomly tweak speeds slightly to look erratic
+            fish.speedX += (Math.random() * 1 - 0.5);
+            fish.speedY = (Math.random() * 1.2 - 0.6); // Move up or down gently
+            
+            // Put speed caps so they don't accelerate into rockets
+            fish.speedX = Math.max(Math.min(fish.speedX, 3), -3);
+            fish.speedY = Math.max(Math.min(fish.speedY, 0.8), -0.8);
+
+            // Reset the behavior timer
+            fish.changeDirectionTimer = Math.random() * 90 + 40;
+        }
+
+        // Apply velocities to coordinates
+        fish.x += fish.speedX;
+        fish.y += fish.speedY;
+
+        // --- EDGE BOUNDARY HANDLING (Change 1 & Vertical limits) ---
+        
+        // Horizontal: Turn around if moving off-screen (disappear buffer room included)
+        if (fish.speedX > 0 && fish.x > screenWidth + 40) {
+            fish.speedX *= -1; // Reverse vector direction back onto screen
+        } else if (fish.speedX < 0 && fish.x < -90) {
+            fish.speedX *= -1; 
+        }
+
+        // Vertical: Bounce away if hitting the surface or the lake floor
+        if (fish.y < 30) {
+            fish.y = 30;
+            fish.speedY *= -1;
+        } else if (fish.y > screenHeight - 50) {
+            fish.y = screenHeight - 50;
+            fish.speedY *= -1;
+        }
+
+        // --- DOM RENDER UPDATES ---
+        fish.element.style.left = `${fish.x}px`;
+        fish.element.style.top = `${fish.y}px`;
+        
+        // Flip visual graphic depending on horizontal moving vector direction
+        if (fish.speedX > 0) {
+            fish.element.style.transform = 'scaleX(1)'; 
+        } else {
+            fish.element.style.transform = 'scaleX(-1)'; 
+        }
     });
 }
 
-// Track mouse movement over water area
-  document.addEventListener('mousemove', (event) => {
-    if (!isGameActive || isFishing) return; // Added !isGameActive
-       
+function checkFishCollisions() {
+    // The visual hook element offset parameters
+    const hookElement = document.querySelector('.hook');
+    if (!hookElement) return null;
 
-    const rect = waterArea.getBoundingClientRect();
-    const mouseX = event.clientX;
-    const mouseY = event.clientY;
+    // Get the absolute position of the hook on the screen
+    const hookRect = hookElement.getBoundingClientRect();
     
-    const isOverWaterX = mouseX >= rect.left && mouseX <= rect.right;
-    const isOverWaterY = mouseY >= rect.top && mouseY <= rect.bottom;
+    // Create a precise, small target zone right around the actual hook tip
+    const hookLeft = hookRect.left;
+    const hookRight = hookRect.right;
+    const hookTop = hookRect.top;
+    const hookBottom = hookRect.bottom;
 
-    if (isOverWaterX && isOverWaterY) {
-        trajectorySvg.style.display = 'block';
-        
-        // ISSUE 3 FIX: Force the aim trajectory target to clip exactly to the water's surface line (rect.top)
-        drawTrajectory(mouseX, rect.top); 
-    } else {
-        trajectorySvg.style.display = 'none';
-        rod.style.transform = 'rotate(-15deg)'; 
-    }
-});
+    let hitTarget = null;
 
+    activeFishes.forEach(fish => {
+        // Get the absolute position of this specific fish on the screen
+        const fishRect = fish.element.getBoundingClientRect();
 
+        // Strict Axis-Aligned Bounding Box (AABB) intersection check
+        const matchX = hookLeft < fishRect.right && hookRight > fishRect.left;
+        const matchY = hookTop < fishRect.bottom && hookBottom > fishRect.top;
+
+        // The fish will ONLY get hooked if its body actively overlaps both the X and Y bounds of the hook
+        if (matchX && matchY) {
+            hitTarget = fish.element;
+        }
+    });
+
+    return hitTarget;
+}
 function drawTrajectory(targetX, targetY) {
-    const rodPivot = document.querySelector('.rod-pivot').getBoundingClientRect();
+    const pivotElement = document.querySelector('.rod-pivot');
+    if (!pivotElement) return;
+
+    const rodPivot = pivotElement.getBoundingClientRect();
     const pivotX = rodPivot.left + (rodPivot.width / 2);
     const pivotY = rodPivot.top + (rodPivot.height / 2);
 
@@ -99,7 +375,7 @@ function drawTrajectory(targetX, targetY) {
     
     if (angle > 65) angle = 65;
     if (angle < -20) angle = -20;
-    rod.style.transform = `rotate(${angle}deg)`;
+    if (rod) rod.style.transform = `rotate(${angle}deg)`;
 
     const rad = angle * (Math.PI / 180);
     const rodLength = 250; 
@@ -111,33 +387,50 @@ function drawTrajectory(targetX, targetY) {
     const controlX = startX + (distanceX * 0.5);
     const controlY = Math.min(startY, targetY) - arcPeakHeight;
 
-    aimArc.setAttribute('d', `M ${startX} ${startY} Q ${controlX} ${controlY} ${targetX} ${targetY}`);
-    aimTarget.setAttribute('cx', targetX);
-    aimTarget.setAttribute('cy', targetY);
+    if (aimArc) aimArc.setAttribute('d', `M ${startX} ${startY} Q ${controlX} ${controlY} ${targetX} ${targetY}`);
+    if (aimTarget) {
+        aimTarget.setAttribute('cx', targetX);
+        aimTarget.setAttribute('cy', targetY);
+    }
 }
 
-// Click to drop hook sequence 
- waterArea.addEventListener('click', (event) => {
- if (!isGameActive || isFishing) return; // Added !isGameActive
+// --- INTERACTIVE EVENT INPUT TRACKERS ---
+
+document.addEventListener('mousemove', (event) => {
+    if (!isGameActive || isFishing) return; 
+
+    const rect = waterArea.getBoundingClientRect();
+    const mouseX = event.clientX;
+    const mouseY = event.clientY;
+    
+    const isOverWaterX = mouseX >= rect.left && mouseX <= rect.right;
+    const isOverWaterY = mouseY >= rect.top && mouseY <= rect.bottom;
+
+    if (isOverWaterX && isOverWaterY) {
+        if (trajectorySvg) trajectorySvg.style.display = 'block';
+        drawTrajectory(mouseX, rect.top); 
+    } else {
+        if (trajectorySvg) trajectorySvg.style.display = 'none';
+        if (rod) rod.style.transform = 'rotate(-15deg)'; 
+    }
+});
+
+waterArea.addEventListener('click', (event) => {
+    if (!isGameActive || isFishing) return; 
 
     isFishing = true;
-    trajectorySvg.style.display = 'none'; 
-
+    if (trajectorySvg) trajectorySvg.style.display = 'none'; 
+    targetX = event.clientX;
     
-    targetX=event.clientX;
-    
-    const fishingLine = document.getElementById('fishingLine');
-    const rodPivot = document.querySelector('.rod-pivot').getBoundingClientRect();
+    const pivotElement = document.querySelector('.rod-pivot');
     const waterRect = waterArea.getBoundingClientRect();
-    
-    //Calculate line start positions relative to the water viewport bounds 
+    if (!pivotElement) return;
+
+    const rodPivot = pivotElement.getBoundingClientRect();
     const rad = 45 * (Math.PI / 180);
     const rodLength = 250;
     const absoluteLineStartY = (rodPivot.top + rodPivot.height / 2) + Math.sin(rad) * rodLength;
     
-    
-
-    // Convert absolute screen coordinates to relative positions inside the blue water grid
     lineStartY = absoluteLineStartY - waterRect.top;
     hookX = targetX - waterRect.left;
     hookY = 0;
@@ -145,238 +438,133 @@ function drawTrajectory(targetX, targetY) {
     hookState = 'DROP';
     caughtFishElement = null;
 
-    // Position the hook inside the blue water boundary system
-    fishingLine.style.left = `${hookX}px`;
-    fishingLine.style.top = `0px`;
-    fishingLine.style.height = '0px';
-    fishingLine.style.display = 'block';
+    if (fishingLine) {
+        fishingLine.style.left = `${hookX}px`;
+        fishingLine.style.top = `0px`;
+        fishingLine.style.height = '0px';
+        fishingLine.style.display = 'block';
+    }
 
-    rod.style.transform = 'rotate(45deg)';
+    if (rod) rod.style.transform = 'rotate(45deg)';
 
     requestAnimationFrame(updatePhysicsLoop);
 });
 
+// --- SCREEN SYSTEM CONTROL MAPS ---
 
-// Real-time Physics Engine Loop
-function updatePhysicsLoop() {
-    const waterHeight = waterArea.clientHeight;
-    const fishingLine = document.getElementById('fishingLine');
-
-    if (hookState === 'DROP') {
-        hookY += hookSpeed;
-        fishingLine.style.height = `${hookY}px`;
-
-        // Checks if hook hits the bottom of the water container bounds
-        if (hookY >= waterHeight - 20) {
-            hookState = 'REEL';
-        }
-    } 
-    else if (hookState === 'REEL') {
-        // Apply physics
-        reelVelocity += gravityPull; 
-        reelVelocity *= 0.95; // Smooth friction
-        hookY += reelVelocity; 
-
-        if (hookY >= waterHeight - 20) {
-            hookY = waterHeight - 20;
-            reelVelocity = 0; 
-        }
-
-        fishingLine.style.height = `${hookY}px`;
-
-        if (caughtFishElement) {
-            chargeBar.style.width = '100%'; 
-            caughtFishElement.style.top = `${hookY - 15}px`;
-        }
-
-        // WIN CONDITION
-        if (hookY <= 0) {
-            hookState = 'IDLE';
-            isFishing = false;
-            fishingLine.style.display = 'none';
-            chargeBar.style.width = '0%';
-            rod.style.transform = 'rotate(-15deg)';
-            reelVelocity = 0; 
-
-            if (caughtFishElement) {
-                caughtFishElement.remove(); 
-                score++;
-                scoreDisplay.innerText = score;
-            }
-        }
-    }
-
-    // FIX 1: Run collision check every single frame regardless of hook state
-    // Only check if we haven't caught a fish yet
-    if (hookState !== 'IDLE' && !caughtFishElement) {
-        const currentHit = checkFishCollisions();
-        if (currentHit) {
-            hookState = 'REEL';
-            caughtFishElement = currentHit;
-            
-            const computedStyle = window.getComputedStyle(caughtFishElement);
-            const matrix = new WebKitCSSMatrix(computedStyle.transform);
-            caughtFishElement.style.animation = 'none';
-            caughtFishElement.style.left = `${matrix.m41}px`;
-        }
-    }
-
-    if (hookState !== 'IDLE') {
-        requestAnimationFrame(updatePhysicsLoop);
-    }
+const startBtn = document.getElementById('startBtn');
+if (startBtn) {
+    startBtn.addEventListener('click', () => {
+        gameContainer.className = 'state-map'; 
+        if (mainMenu) mainMenu.style.display = 'none';
+    });
 }
 
-// Accurate fish collision checks using element layout dimensions
-function checkFishCollisions() {
-    const fishes = document.querySelectorAll('.fish');
-    const hookRect = document.querySelector('.hook').getBoundingClientRect();
-    let hitTarget = null;
-
-    fishes.forEach(fish => {
-        const fishRect = fish.getBoundingClientRect();
-        
-        // Standard AABB bounding box collision checks
-        const matchX = hookRect.left < fishRect.right && hookRect.right > fishRect.left;
-        const matchY = hookRect.top < fishRect.bottom && hookRect.bottom > fishRect.top;
-
-        if (matchX && matchY) {
-            hitTarget = fish;
+const continueBtn = document.getElementById('continueBtn');
+if (continueBtn) {
+    continueBtn.addEventListener('click', () => {
+        if (mainMenu) mainMenu.style.display = 'none';
+        if (gameCreated) {
+            gameContainer.className = 'state-gameplay';
+            isGameActive = true;
+        } else {
+            gameContainer.className = 'state-map';
         }
     });
-
-    return hitTarget;
 }
 
-function startTimer() {
-    // Clear any old running timers first just to be safe
-    clearInterval(countdownInterval); 
-    gameTimer = 60; 
-    timerDisplay.innerText = `Time: ${gameTimer}`;
-
-    countdownInterval = setInterval(() => {
-        if (!isGameActive) return; // Pause timer if user hits 'Tab' to menu
-
-        gameTimer--;
-        timerDisplay.innerText = `Time: ${gameTimer}`;
-
-        if (gameTimer <= 0) {
-            clearInterval(countdownInterval);
-            handleGameOver(); 
-        }
-    }, 1000); // Runs exactly once per second
-}
-
-function handleGameOver() {
-    isGameActive = false;
-    hookState = 'IDLE';
-    isFishing = false;
-    
-    // Bring up the main menu overlay and change the title to show they finished
-    const mainMenu = document.getElementById('mainMenu');
-    const menuTitle = document.querySelector('.menu-title');
-    
-    menuTitle.innerText = `TIME'S UP! SCORE: ${score}`;
-    mainMenu.style.display = 'flex';
-}
-
-let resizeTimeout;
-window.addEventListener('resize', () => {
-    if (!isFishing) {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => {
-            createFish();
-        }, 150);
-    }
-});
-
-function resetGame(){
-    hookState = 'IDLE';
-    isFishing = false;
-    reelVelocity = 0;
-    
-    score = 0;
-    scoreDisplay.innerText = score;
-    chargeBar.style.width = '0%';
-    rod.style.transform = 'rotate(-15deg)';
-    
-    createFish();
-    startTimer();
-}
-
-//Menu buttons 
-const startBtn = document.getElementById('startBtn');
-const mainMenu = document.getElementById('mainMenu');
-
-
-startBtn.addEventListener('click', () => {
-    resetGame(); // Resets all game state variables and starts fresh
-    isGameActive = true;
-    mainMenu.style.display = 'none'; // Hides the menu completely
-});
-
-continueBtn.addEventListener('click', () => {
-    if(gameCreated==0){ //if game has not been created yet create it 
-    resetGame(); // Resets all game state variables and starts fresh
-    isGameActive = true;
-    mainMenu.style.display = 'none'; // Hides the menu completely
-    } else{
+document.querySelectorAll('.map-node').forEach(node => {
+    node.addEventListener('click', (event) => {
+        const chosenLocationId = event.target.getAttribute('data-location');
+        console.log(`Loading fishing spot: ${chosenLocationId}`);
+        
+        gameContainer.className = 'state-gameplay';
         isGameActive = true;
-        mainMenu.style.display = 'none'; // Hides the menu completely
-    }
+        gameCreated = true;
+        
+        // Timeout wrapper prevents client layout reading from crashing on fast frames
+        setTimeout(() => {
+            resetGame();
+        }, 30);
+    });
 });
 
-//Key inputs
+// --- INPUT KEY MAPPER MECHANICS ---
+
 document.addEventListener('keydown', (event) => {
-    // Check if the lowercase key or uppercase key matches 'r'
     if (event.key.toLowerCase() === 'r') {
-        resetGame(); // Resets all game state variables and starts fresh
-        console.log("Game reset successfully via hotkey.");
+        resetGame();
     }
-});
-
-document.addEventListener('keydown', (event) => {
-    // Check if the lowercase key or uppercase key matches 'tab'
+    
     if (event.key.toLowerCase() === 'tab') {
-        if(isGameActive===false) return; // Prevents tabbing back to menu if game is already inactive
-        isGameActive=false 
-        mainMenu.style.display = 'flex'; // Show the menu again
+        event.preventDefault(); 
+        if (isGameActive) {
+            isGameActive = false;
+            if (trajectorySvg) trajectorySvg.style.display = 'none'; 
+            if (mainMenu) mainMenu.style.display = 'flex';
+            gameContainer.className = 'state-menu'; 
+            
+            const menuTitle = document.querySelector('.menu-title');
+            if (menuTitle) {
+                menuTitle.innerText = "GAME PAUSED";
+            }
+        }
     }
 });
 
-let spacebarPressed = false; // Track if Spacebar is currently held down
+let spacebarPressed = false; 
 
 document.addEventListener('keydown', (event) => {
-    // Check if the pressed key is the Spacebar
     if (event.code === 'Space') {
-        // Prevent the page from scrolling down when pressing Space
         event.preventDefault(); 
-        if(hookState === 'DROP') {
+        if (hookState === 'DROP') {
             hookState = 'REEL';
         }
         
-        // Only allow mashing if a fish is hooked or the line is reeling in
         if (hookState === 'REEL') {
-            if(caughtFishElement){ 
-               if(!spacebarPressed){ //changes upward movement to based on mashing instead of automatic reel velocity when a fish is caught
-                reelVelocity -= 6.5; // Negative value moves the hook UP towards 0
+            if (caughtFishElement) { 
+               if (!spacebarPressed) { 
+                reelVelocity -= 6.5; 
                }
             }
-         spacebarPressed = true; // Set the flag to indicate Spacebar is being held down
-                 
+            spacebarPressed = true; 
         }
     }
 });
+
 document.addEventListener('keyup', (event) => {
-    // Check if the pressed key is the Spacebar
     if (event.code === 'Space') {
-       spacebarPressed = false; // Reset the flag when Spacebar is released
+       spacebarPressed = false; 
      }
 });
-//Continuously pull the hook up if space is held down and NO fish is caught
+
+// --- FRAME RATE LOOP MANAGEMENT TICKERS ---
+
+function tickFishAnimation() {
+    if (isGameActive) {
+        updateFishMovement();
+
+        //runs dynamic tracking clock alongside movement vectors 
+        manageMidGameSpawning();
+    }
+    requestAnimationFrame(tickFishAnimation);
+}
+requestAnimationFrame(tickFishAnimation); 
+
 function handlePassiveReel() {
     if (isGameActive && hookState === 'REEL' && spacebarPressed && !caughtFishElement) {
-        reelVelocity -= 0.8; // Steady upward lift force while holding down
+        reelVelocity -= 0.8; 
     }
     requestAnimationFrame(handlePassiveReel);
 }
-requestAnimationFrame(handlePassiveReel); // Start tracking passive holds
+requestAnimationFrame(handlePassiveReel);
+
+let resizeTimeout;
+window.addEventListener('resize', () => {
+    if (!isFishing && isGameActive) {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            spawnFishSchool();
+        }, 150);
+    }
+});
