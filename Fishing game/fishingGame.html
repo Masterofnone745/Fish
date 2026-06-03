@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fishing Game Mockup</title>
+    <link rel="stylesheet" href="fishingGame.css">
+</head>
+<body>
+
+    <div class="game-container">
+        <div class="ui-overlay">
+            <div class="score-display">Fish Caught: <span id="score">0</span></div>
+        </div>
+
+        <div class="meter-container">
+            <div class="meter-bar" id="chargeBar"></div>
+            <div class="meter-text">Reel Charge</div>
+        </div>
+
+        <div id="timerDisplay" class="game-timer">Time: 60</div>
+
+
+        <div class="ground"></div>
+
+        <div class="water" id="waterArea">
+           <div class="fishing-line" id="fishingLine">
+             <div class="hook"></div>
+           </div>
+        </div>
+
+        <div id="mainMenu" class="menu-overlay">
+            <div class="menu-box">
+             <h1 class="menu-title">FISHING GAME</h1>
+             <button id="startBtn" class="menu-button"> NEW GAME</button>
+                <button id="continueBtn" class="menu-button"> CONTINUE </button>
+           </div>
+       </div>
+
+     <svg class="trajectory-svg" id="trajectorySvg">
+        <path id="aimArc" d="" fill="none" stroke="rgba(255, 255, 255, 0.8)" stroke-width="3" stroke-dasharray="6,4" />
+        <circle id="aimTarget" cx="0" cy="0" r="25" fill="rgba(255, 255, 255, 0.15)" stroke="#ffffff" stroke-width="2" stroke-dasharray="4,3" />
+    </svg>
+
+        <div class="player">
+            player
+            <div class="rod-pivot">
+                <div class="rod" id="rod">
+                  <div class="fishing-line" id="fishingLine">
+                    <div class="hook"></div>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+ <script src="fishingGame.js"></script>
+
+</body>
+</html>
