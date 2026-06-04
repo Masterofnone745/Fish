@@ -11,12 +11,39 @@
 <div id="gameContainer" class="state-menu">
     
     <div id="mainMenu" class="menu-overlay">
-        <div class="menu-box">
-            <h1 class="menu-title">FISHING GAME</h1>
-            <button id="startBtn" class="menu-button"> NEW GAME</button>
-            <button id="continueBtn" class="menu-button"> CONTINUE </button>
+    <div class="menu-box" id="startMenuBox">
+        <h1 class="menu-title">FISHING GAME</h1>
+        <button id="startBtn" class="menu-button"> NEW GAME</button>
+        <button id="continueBtn" class="menu-button"> CONTINUE </button>
+    </div>
+
+    <div class="menu-box" id="gameOverBox" style="display: none;">
+        <h1 class="menu-title">TIME'S UP!</h1>
+        <p class="menu-text" style="color: #fff; font-size: 20px; margin-bottom: 10px;">
+            You caught: <span id="finalScore" style="color: #4ade80; font-weight: bold;">0</span> fish
+        </p>
+        <p class="menu-text" style="color: #94a3b8; font-size: 18px; margin-bottom: 30px;">
+            High score: <span id="highScoreDisplay" style="color: #f59e0b; font-weight: bold;">0</span>
+        </p>
+        <button id="backToMapBtn" class="menu-button">BACK TO MAP</button>
+    </div>
+</div>
+
+<div id="inventoryMenu" class="menu-overlay" style="display: none;">
+    <div class="inventory-container">
+        <div class="inventory-header">
+            <button id="invBackToMapBtn" class="menu-button-alt">Back to map</button>
+        </div>
+
+        <div id="inventoryGrid" class="inventory-grid">
+            </div>
+
+        <div class="inventory-footer">
+            <span id="invPageIndicator" class="page-number">1/1</span>
+            <button id="invNextPageBtn" class="next-arrow-btn">➔</button>
         </div>
     </div>
+</div>
 
     <div id="mapMenu" class="screen">
         <div class="lake-map">
@@ -24,19 +51,35 @@
             <button class="map-node point-b1" data-location="2">Point B</button>
             <button class="map-node point-b2" data-location="3">Point C</button>
             
-            <button class="map-util shop-btn" disabled>Shop</button>
-            <button class="map-util inventory-btn" disabled>Fish inventory</button>
+            <button class="map-util shop-btn">Shop</button>
+            <button id="inventoryBtn" class="map-util inventory-btn">Fish inventory</button>
         </div>
     </div>
+
+    <div id="shopMenu" class="screen" style="display: none;">
+    <div class="shop-container">
+        
+        <div class="shop-header-row">
+            <div class="shop-header-box">BUY</div>
+            <button id="sellFishBtn" class="shop-header-box interactive-box">SELL fish</button>
+        </div>
+
+        <div class="shop-main-content">
+            <button id="buyBaitBtn" class="shop-item-card">Bait</button>
+            <button id="upgradeInvBtn" class="shop-item-card">Inventory<br>upgrade</button>
+        </div>
+
+        <div class="shop-footer-row">
+            <button id="shopBackToMapBtn" class="shop-text-btn">Back to map</button>
+            <div id="moneyDisplay" class="shop-text-label">Money: 0</div>
+        </div>
+
+    </div>
+</div>
 
     <div id="gameplayScreen" class="screen">
         <div class="ui-overlay">
             <div class="score-display">Fish Caught: <span id="score">0</span></div>
-        </div>
-
-        <div class="meter-container">
-            <div class="meter-bar" id="chargeBar"></div>
-            <div class="meter-text">Reel Charge</div>
         </div>
 
         <div id="timerDisplay" class="game-timer">Time: 60</div>
