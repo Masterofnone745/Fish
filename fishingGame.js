@@ -15,6 +15,11 @@ const chargeBar = document.getElementById('chargeBar');
 const scoreDisplay = document.getElementById('score');
 const timerDisplay = document.getElementById('timerDisplay');
 
+//buttons
+const startBtn = document.getElementById('startBtn');
+const continueBtn = document.getElementById('continueBtn');
+
+
 // Physics Tuning Values
 let reelVelocity = 0;  // Tracks momentum metrics for line mechanics
 const gravityPull = 0.5; // Upward-resisting gravitational downward drag
@@ -23,6 +28,11 @@ const gravityPull = 0.5; // Upward-resisting gravitational downward drag
 const trajectorySvg = document.getElementById('trajectorySvg');
 const aimArc = document.getElementById('aimArc');
 const aimTarget = document.getElementById('aimTarget');
+
+//Fish inventory variables
+let caughtFishInventory=[]; 
+let currentInventoryIndex=1;
+let slotsPerPage=12; // 3x4 grid layout
 
 // Structural Hook Properties
 let hookState = 'IDLE'; // States: 'IDLE', 'DROP', 'REEL'
@@ -35,16 +45,27 @@ let caughtFishElement = null;
 const hookSpeed = 6; 
 let score = 0;
 let isFishing = false;
+let playerMoney = 0;
+
+//fish stats
+let fishSpeed = 2; // Base speed for fish movement
+let fishWeight = 1; // Base weight for catch difficulty 
+
 
 // Time and Life Tracker Parameters
-let gameTimer = 60; 
+let gameTimer = 30; 
 let countdownInterval = null;
 let activeFishes = []; 
 
 // --- NEW SPAWNING SYSTEM SETTINGS ---
 const MAX_FISH_CAP = 8;        // The absolute limit of fish allowed on screen at once
-let spawnTimerMax = 360;      // How many frames to wait between spawn checks (180 frames ≈ 3 seconds)
-let spawnCountdown = spawnTimerMax;
+let BaitNum=0;
+
+const spawnTimerMax = 420;    // Base number of frames between spawn checks (7 seconds at 60fps)
+const spawnTimerMin = 180;    // Minimum frames between spawns (3 seconds)
+
+let spawnCountdown = 250; // Initial countdown value (4+ seconds) to give player time to get ready before first spawn
+
 
 const fishData = [
     { id: 1, top: 60,   duration: '12s'},
@@ -62,15 +83,27 @@ function spawnFishSchool() {
 
     const currentWaterWidth = waterArea.clientWidth || window.innerWidth * 0.6;
     
-    // Feature 3 preview: Let's randomize the initial count between 3 and 6 for now
-    const randomSpawnCount = Math.floor(Math.random() * 4) + 3; 
+    //starting spawn count 
+    const randomSpawnCount = Math.floor(Math.random() * 4)+BaitNum; 
 
     for (let i = 0; i < randomSpawnCount; i++) {
         const fishElement = document.createElement('div');
         fishElement.className = 'fish'; 
         fishElement.innerText = 'fish';
         
-        // Spawn them spread out across the water area randomly
+        // 🌟 NEW: Roll a random weight between 1.0 and 5.0 kg
+        const rolledWeight = parseFloat((Math.random() * 4 + 1).toFixed(1));
+        
+        // 🌟 NEW: Calculate speed penalty based on weight (heavier = slower)
+        // Base random speed is divided by a fraction of the weight
+        const weightSpeedModifier = Math.max(0.4, 2 / rolledWeight);
+        const baseSpeedX = (Math.random() * 1.5 + 1) * (Math.random() > 0.5 ? 1 : -1);
+
+        // 🌟 NEW: Scale the visual size of the div based on weight so players see it!
+        const visualScale = 1 + (rolledWeight - 1) * 0.2; // scales from 1x up to 1.8x size
+        fishElement.style.transformOrigin = 'center';
+
+
         const initialX = Math.random() * (currentWaterWidth - 100) + 50;
         const initialY = Math.random() * (waterArea.clientHeight - 100) + 50;
         
@@ -89,38 +122,49 @@ function spawnFishSchool() {
         });
     }
 }
-
 function manageMidGameSpawning() {
-    // Only run this system if the game is active and a line isn't currently reeling a catch
     if (!isGameActive) return;
 
     spawnCountdown--;
     if (spawnCountdown <= 0) {
-        // Reset the timer clock
         spawnCountdown = spawnTimerMax;
 
-        // Count how many fish are actively swimming right now
+        // Strict hard ceiling check
         if (activeFishes.length >= MAX_FISH_CAP) return;
 
-        // --- SPAWN PROBABILITY CALCULATION (Change 4) ---
-        // Base chance is 40%. Every fish caught (score) increases the chance by 10%.
-        let spawnChance = 0.40 + (score * 0.10);
-        // Cap the maximum chance at 70% so it's not completely guaranteed
-        if (spawnChance > 0.70) spawnChance = 0.70;
+        // --- INVERTED POPULATION PROBABILITY MATH ---
+        // Base starting spawn probability
+        let spawnChance = 0.30; 
+
+        // Calculate how empty the lake is relative to its absolute capacity
+        const remainingSlots = MAX_FISH_CAP - activeFishes.length;
+
+        if (activeFishes.length <= 1) {
+            // DESPERATION RESTOCK: If the lake is empty or has 1 lonely fish, force an 80% spawn rate
+            spawnChance = 0.80;
+        } else {
+            // GRADUAL BALANCING: Add a scaling 10% bonus for every missing slot below the cap
+            spawnChance += (remainingSlots * 0.08);
+        }
+
+        // Keep bounds comfortable between a 20% minimum and 85% maximum chance
+        spawnChance = Math.max(0.20, Math.min(spawnChance, 0.85));
 
         // Roll the virtual dice!
         if (Math.random() < spawnChance) {
             const currentWaterWidth = waterArea.clientWidth || window.innerWidth * 0.6;
             
-            // Randomly select a row depth from your fishData template
             const randomDataIndex = Math.floor(Math.random() * fishData.length);
             const chosenDepth = fishData[randomDataIndex].top;
 
             const fishElement = document.createElement('div');
             fishElement.className = 'fish'; 
             fishElement.innerText = 'fish';
+
+            const rolledWeight = parseFloat((Math.random() * 4 + 1).toFixed(1));
+            const weightSpeedModifier = Math.max(0.4, 2 / rolledWeight);
+            const visualScale = 1 + (rolledWeight - 1) * 0.2;
             
-            // New mid-game fish always swim in from the far edges
             const startLeft = Math.random() > 0.5;
             const initialX = startLeft ? -80 : currentWaterWidth + 80;
             
@@ -128,18 +172,21 @@ function manageMidGameSpawning() {
             fishElement.style.left = `${initialX}px`;
             waterArea.appendChild(fishElement);
 
-            // Push the new swimmer into your live physics loop engine
             activeFishes.push({
                 element: fishElement,
                 x: initialX,
                 y: chosenDepth,
+                 
+                weight: rolledWeight, // Store weight for catch resolution
+                visualScale: visualScale, // Store visual scale for rendering
+
                 speedX: (Math.random() * 1.5 + 1) * (startLeft ? 1 : -1), 
                 speedY: (Math.random() * 0.8 - 0.4),
                 changeDirectionTimer: Math.random() * 60 + 30,
                 width: 85 
             });
 
-            console.log(`Dynamic spawn triggered! Success rate was ${Math.round(spawnChance * 100)}%. Total fish: ${activeFishes.length}`);
+            console.log(`Lake dynamic population check: ${activeFishes.length}/${MAX_FISH_CAP}. Spawn chance automatically adjusted to ${Math.round(spawnChance * 100)}%`);
         }
     }
 }
@@ -166,35 +213,36 @@ function handleGameOver() {
     isGameActive = false;
     hookState = 'IDLE';
     isFishing = false;
-    
-    gameCreated= false;
+    gameCreated = false; // Ensures continue button drops to map logic
 
+    // Pull the all-time high score from browser memory (defaults to 0 if first time playing)
+    let currentHighScore = parseInt(localStorage.getItem('fishingHighScore')) || 0;
+
+    // Check if the player just broke their record!
+    if (score > currentHighScore) {
+        currentHighScore = score;
+        localStorage.setItem('fishingHighScore', currentHighScore); // Lock it into memory
+    }
+
+    // Update the layout elements inside our new game over panel
+    const finalScoreSpan = document.getElementById('finalScore');
+    const highScoreSpan = document.getElementById('highScoreDisplay');
+    
+    if (finalScoreSpan) finalScoreSpan.innerText = score;
+    if (highScoreSpan) highScoreSpan.innerText = currentHighScore;
+
+    // Toggle panel visibility: Hide main menu buttons, display Game Over stats
+    const startMenuBox = document.getElementById('startMenuBox');
+    const gameOverBox = document.getElementById('gameOverBox');
+    
+    if (startMenuBox) startMenuBox.style.display = 'none';
+    if (gameOverBox) gameOverBox.style.display = 'block';
+
+    // Bring up the overlay screen wrapper
     if (mainMenu) mainMenu.style.display = 'flex'; 
     gameContainer.className = 'state-menu';
-    
-    const menuTitle = document.querySelector('.menu-title');
-    if (menuTitle) {
-        menuTitle.innerText = `TIME'S UP! SCORE: ${score}`;
-    }
 }
-
-function resetGame(){
-    hookState = 'IDLE';
-    isFishing = false;
-    reelVelocity = 0;
-    
-    score = 0;
-    if (scoreDisplay) scoreDisplay.innerText = score;
-    if (chargeBar) chargeBar.style.width = '0%';
-    if (rod) rod.style.transform = 'rotate(-15deg)';
-    if (fishingLine) fishingLine.style.display = 'none';
-
-    spawnFishSchool();
-    startTimer();
-}
-
 // --- REAL-TIME RUNTIME PHYSICS PHYSICS LOOP ---
-
 function updatePhysicsLoop() {
     if (!isGameActive) return;
 
@@ -209,22 +257,51 @@ function updatePhysicsLoop() {
         }
     } 
     else if (hookState === 'REEL') {
-        reelVelocity += gravityPull; 
+        let activeGravity = gravityPull;
+        let caughtFishData = null;
+
+        if (caughtFishElement) {
+            caughtFishData = activeFishes.find(f => f.element === caughtFishElement);
+            if (caughtFishData) {
+                // Safeguard against weight being a string or undefined
+                let fishWeightNum = parseFloat(caughtFishData.weight);
+                if (isNaN(fishWeightNum)) fishWeightNum = 1.0;
+                
+                // Each kg adds baseline gravity pull
+                activeGravity += (fishWeightNum * 0.15); 
+
+                // Date.now() / 400 creates a smooth, oscillating rhythm of fighting and resting
+                const fightCycle = Math.sin(Date.now() / 400); 
+                
+                if (fightCycle > 0) {
+                    // Fish is actively thrashing! Apply its weight drag
+                    activeGravity += (fishWeightNum * 0.18) * fightCycle;
+                    
+                    // Visual cue: make the stuck fish shake slightly while fighting
+                    caughtFishElement.style.transform = `scale(${caughtFishData.visualScale || 1}) translateX(${(Math.random() * 4 - 2)}px)`;
+                } else {
+                    // Fish is tired out and resting! Weight drag drops to almost nothing
+                    activeGravity += (fishWeightNum * 0.02);
+                }
+            }  
+        }
+
+        reelVelocity += activeGravity; 
         reelVelocity *= 0.95; 
         hookY += reelVelocity; 
 
         if (hookY >= waterHeight - 20) {
             hookY = waterHeight - 20;
+            if(reelVelocity > 0){
             reelVelocity = 0; 
+            }
         }
 
         if (fishingLine) fishingLine.style.height = `${hookY}px`;
 
         if (caughtFishElement) {
-            if (chargeBar) chargeBar.style.width = '100%'; 
             caughtFishElement.style.top = `${hookY - 15}px`;
 
-            // Updates our internal coordinate array tracking so the engine knows where it is
             const fishDataInstance = activeFishes.find(f => f.element === caughtFishElement);
             if (fishDataInstance) {
                 fishDataInstance.y = hookY - 15;
@@ -234,13 +311,40 @@ function updatePhysicsLoop() {
         if (hookY <= 0) {
             hookState = 'IDLE';
             isFishing = false;
+            
             if (fishingLine) fishingLine.style.display = 'none';
-            if (chargeBar) chargeBar.style.width = '0%';
             if (rod) rod.style.transform = 'rotate(-15deg)';
             reelVelocity = 0; 
 
-            if (caughtFishElement) {
+            // Explicitly clear your UI state tracking parameters here
+            if (chargeBar) {
+                chargeBar.style.width = '0%';
+            }
+
+            if (caughtFishElement) { 
+                const finalFishData = activeFishes.find(f => f.element === caughtFishElement);
+                let finalWeight = 1.0;
+                if (finalFishData && finalFishData.weight) {
+                    finalWeight = parseFloat(finalFishData.weight);
+                    if (isNaN(finalWeight)) finalWeight = 1.0;
+                }
+
                 activeFishes = activeFishes.filter(f => f.element !== caughtFishElement);
+
+                // Save caught fish metrics
+                caughtFishInventory.push({
+                    name: `${finalWeight}kg fish`,
+                    caughtAt: Date.now(),
+                    weight: finalWeight
+                });
+                
+                // Clean rounding prevents decimal wallet values
+                const fishPayout = Math.round(finalWeight * 10); 
+                playerMoney += fishPayout;
+
+                renderInventoryGrid();
+                saveGameProgress();
+
                 caughtFishElement.remove(); 
                 caughtFishElement = null; 
                 
@@ -258,7 +362,8 @@ function updatePhysicsLoop() {
             
             const fishDataInstance = activeFishes.find(f => f.element === caughtFishElement);
             if (fishDataInstance) {
-                fishDataInstance.speed = 0; 
+                fishDataInstance.speedX = 0; 
+                fishDataInstance.speedY = 0;
             }
             if (fishingLine) caughtFishElement.style.left = window.getComputedStyle(fishingLine).left;
         }
@@ -268,6 +373,8 @@ function updatePhysicsLoop() {
         requestAnimationFrame(updatePhysicsLoop);
     }
 }
+
+
 
 function updateFishMovement() {
     const screenWidth = waterArea.clientWidth || window.innerWidth * 0.6;
@@ -324,9 +431,9 @@ function updateFishMovement() {
         
         // Flip visual graphic depending on horizontal moving vector direction
         if (fish.speedX > 0) {
-            fish.element.style.transform = 'scaleX(1)'; 
+        fish.element.style.transform = `scale(${fish.visualScale}, ${fish.visualScale}) scaleX(1)`; 
         } else {
-            fish.element.style.transform = 'scaleX(-1)'; 
+            fish.element.style.transform = `scale(${fish.visualScale}, ${fish.visualScale}) scaleX(-1)`; 
         }
     });
 }
@@ -394,6 +501,97 @@ function drawTrajectory(targetX, targetY) {
     }
 }
 
+function renderInventoryGrid() {
+    const gridContainer = document.getElementById('inventoryGrid');
+    const pageIndicator = document.getElementById('invPageIndicator');
+    if (!gridContainer) return;
+
+    // Reset current UI elements completely
+    gridContainer.innerHTML = '';
+
+    // Calculate pagination rules
+    const totalPages = Math.max(1, Math.ceil(caughtFishInventory.length / slotsPerPage));
+    
+    // Bounds check to ensure user doesn't end up on an empty page index
+    if (currentInventoryIndex > totalPages) currentInventoryIndex = totalPages;
+
+    if (pageIndicator) {
+        pageIndicator.innerText = `${currentInventoryIndex}/${totalPages}`;
+    }
+
+    // Determine slice points for the active viewing block
+    const startIndex = (currentInventoryIndex - 1) * slotsPerPage;
+    
+    // Generate exactly 12 grid boxes regardless of whether they have a fish or not
+    for (let i = 0; i < slotsPerPage; i++) {
+        const itemIndex = startIndex + i;
+        const slotDiv = document.createElement('div');
+        slotDiv.className = 'inventory-slot';
+
+        // Check if an item exists at this position in our collection array
+        if (itemIndex < caughtFishInventory.length) {
+            const fishData = caughtFishInventory[itemIndex];
+            
+            const badgeDiv = document.createElement('div');
+            badgeDiv.className = 'fish-badge';
+            badgeDiv.innerText = fishData.name; // Displays the "fish" string
+            
+            slotDiv.appendChild(badgeDiv);
+        }
+
+        gridContainer.appendChild(slotDiv);
+    }
+}
+
+// Open / Close Window Triggers
+function openInventory() {
+    isGameActive = false; // Freezes any backgrounds
+    const invMenu = document.getElementById('inventoryMenu');
+    if (invMenu) {
+        invMenu.style.display = 'flex';
+        currentInventoryIndex = 1;
+        renderInventoryGrid();
+    }
+}
+
+// --- SAVE & LOAD SYSTEM ---
+
+// Saves current player state to localStorage
+function saveGameProgress() {
+    const gameState = {
+        playerMoney: playerMoney,
+        BaitNum: BaitNum,
+        slotsPerPage: slotsPerPage,
+        caughtFishInventory: caughtFishInventory,
+        score: score
+    };
+    localStorage.setItem('fishingGameSave', JSON.stringify(gameState));
+    console.log("Progress saved completely.");
+}
+
+// Loads player state from localStorage
+function loadGameProgress() {
+    const savedData = localStorage.getItem('fishingGameSave');
+    if (savedData) {
+        const gameState = JSON.parse(savedData);
+        
+        // Restore variables safely
+        playerMoney = gameState.playerMoney ?? 0;
+        BaitNum = gameState.BaitNum ?? 0;
+        slotsPerPage = gameState.slotsPerPage ?? 12;
+        caughtFishInventory = gameState.caughtFishInventory ?? [];
+        score = gameState.score ?? 0;
+
+        // Sync UI displays immediately
+        if (scoreDisplay) scoreDisplay.innerText = score;
+        updateShopUI();
+        renderInventoryGrid();
+        
+        return true; // Save successfully loaded
+    }
+    return false; // No save data found
+}
+
 // --- INTERACTIVE EVENT INPUT TRACKERS ---
 
 document.addEventListener('mousemove', (event) => {
@@ -450,26 +648,229 @@ waterArea.addEventListener('click', (event) => {
     requestAnimationFrame(updatePhysicsLoop);
 });
 
-// --- SCREEN SYSTEM CONTROL MAPS ---
+function resetGame() {
+    hookState = 'IDLE';
+    isFishing = false;
+    reelVelocity = 0;
+    spacebarPressed = false; // Reset input flag
+    caughtFishElement = null;
+    
+    score = 0;
+    if (scoreDisplay) scoreDisplay.innerText = score;
+    if (chargeBar) chargeBar.style.width = '0%';
+    if (rod) rod.style.transform = 'rotate(-15deg)';
+    if (fishingLine) fishingLine.style.display = 'none';
 
-const startBtn = document.getElementById('startBtn');
-if (startBtn) {
-    startBtn.addEventListener('click', () => {
-        gameContainer.className = 'state-map'; 
-        if (mainMenu) mainMenu.style.display = 'none';
+    spawnCountdown = 250; 
+    spawnFishSchool();
+    startTimer();
+    
+    // FORCE ACTIVE STATE: Tells the physics loop to start processing engine variables
+    isGameActive = true; 
+}
+
+
+
+// --- SHOP INTERACTIVE LOGIC MODULE ---
+
+function updateShopUI() {
+    const moneyDisplay = document.getElementById('moneyDisplay');
+    if (moneyDisplay) {
+        moneyDisplay.innerText = `Money: ${playerMoney}`;
+    }
+}
+
+// 1. Navigation Routing: Hook Up Shop Button on Map
+const shopBtn = document.querySelector('.shop-btn');
+if (shopBtn) {
+    shopBtn.addEventListener('click', () => {
+        isGameActive = false; // Freeze live game tickers
+    
+        const shopMenu = document.getElementById('shopMenu');
+        if (shopMenu) {
+            shopMenu.style.display = 'flex';
+            updateShopUI();
+        }
     });
 }
 
-const continueBtn = document.getElementById('continueBtn');
+// 2. Navigation Routing: Exit Shop Back to Map
+const shopBackToMapBtn = document.getElementById('shopBackToMapBtn');
+if (shopBackToMapBtn) {
+    shopBackToMapBtn.addEventListener('click', () => {
+        const shopMenu = document.getElementById('shopMenu');
+        if (shopMenu) shopMenu.style.display = 'none';
+        gameContainer.className = 'state-map';
+    });
+}
+
+// 3. Economics: Sell Caught Inventory 
+const sellFishBtn = document.getElementById('sellFishBtn');
+if (sellFishBtn) {
+    sellFishBtn.addEventListener('click', () => {
+        if (caughtFishInventory.length === 0) {
+            alert("No fish available to sell!");
+            return;
+        }
+
+        // Each fish caught converts into 10 Gold coins
+        const earnings = caughtFishInventory.length * 10;
+        playerMoney += earnings;
+        
+        // Empty inventory array entirely
+        caughtFishInventory = [];
+        
+        updateShopUI();
+        saveGameProgress();
+        console.log(`Sold catch for $${earnings}. Wallet: $${playerMoney}`);
+    });
+}
+
+// 4. Upgrades: Purchase Bait item
+const buyBaitBtn = document.getElementById('buyBaitBtn');
+if (buyBaitBtn) {
+    buyBaitBtn.addEventListener('click', () => {
+        const baitCost = 15;
+        if (playerMoney >= baitCost) {
+            playerMoney -= baitCost;
+            BaitNum += 1; // Direct update to your procedural spawning arithmetic
+            
+            updateShopUI();
+            saveGameProgress();
+            alert(`Purchased 1 Bait! Current modifier: +${BaitNum} fish`);
+        } else {
+            alert(`Insufficient funds! Bait costs $${baitCost}.`);
+        }
+    });
+}
+
+// 5. Upgrades: Expand Grid Slot Size
+const upgradeInvBtn = document.getElementById('upgradeInvBtn');
+if (upgradeInvBtn) {
+    upgradeInvBtn.addEventListener('click', () => {
+        const upgradeCost = 50;
+        if (playerMoney >= upgradeCost) {
+            playerMoney -= upgradeCost;
+            
+            // Increment inventory slot grid size page thresholds
+            slotsPerPage += 4; 
+            
+            updateShopUI();
+            saveGameProgress();
+            alert(`Inventory upgraded! Max view size per page increased to ${slotsPerPage} slots.`);
+        } else {
+            alert(`Insufficient funds! Upgrades cost $${upgradeCost}.`);
+        }
+    });
+}
+
+// --- FIXED SCREEN SYSTEM MENU CONTROLLERS ---
+
+// 1. NEW GAME BUTTON
+if (startBtn) {
+    startBtn.addEventListener('click', () => {
+        // Confirmation dialog so players don't accidentally wipe their hard work
+        const confirmNew = confirm("Are you sure you want to start a New Game? This will reset all your Money, Bait, and Inventory upgrades!");
+        
+        if (confirmNew) {
+            // Wipe data from local storage memory completely
+            localStorage.removeItem('fishingGameSave');
+
+            // Reset variables back to clean state
+            caughtFishInventory = [];
+            playerMoney = 0;
+            BaitNum = 0;
+            slotsPerPage = 12;
+            score = 0;
+
+            // Update user interfaces
+            if (scoreDisplay) scoreDisplay.innerText = score;
+            updateShopUI();
+            renderInventoryGrid();
+
+            // Send player straight to the map screen map
+            gameContainer.className = 'state-map'; 
+            if (mainMenu) mainMenu.style.display = 'none';
+
+            const startMenuBox = document.getElementById('startMenuBox');
+            const gameOverBox = document.getElementById('gameOverBox');
+            if (startMenuBox) startMenuBox.style.display = 'block';
+            if (gameOverBox) gameOverBox.style.display = 'none';
+        }
+    });
+}
+
+// 2. CONTINUE BUTTON
 if (continueBtn) {
     continueBtn.addEventListener('click', () => {
-        if (mainMenu) mainMenu.style.display = 'none';
-        if (gameCreated) {
-            gameContainer.className = 'state-gameplay';
-            isGameActive = true;
+        // Try to load an existing save file
+        const hasSave = loadGameProgress();
+
+        if (hasSave) {
+            // An old save exists! Take them safely straight back to the map screen
+            if (mainMenu) mainMenu.style.display = 'none';
+            gameContainer.className = 'state-map';
+            console.log("Welcome back! Save file loaded successfully.");
         } else {
+            // No save file found in browser cache
+            alert("No existing save file found! Starting a fresh profile instead.");
+            
+            // Trigger standard fresh setup parameters instead
+            caughtFishInventory = [];
+            playerMoney = 0;
+            BaitNum = 0;
+            slotsPerPage = 12;
+            score = 0;
+            
+            if (mainMenu) mainMenu.style.display = 'none';
             gameContainer.className = 'state-map';
         }
+    });
+}
+// --- SCREEN SYSTEM CONTROL MAPS ---
+
+const inventoryBtn = document.getElementById('inventoryBtn');
+if (inventoryBtn) {
+    inventoryBtn.addEventListener('click', () => {
+        openInventory();
+    });
+}
+
+const backToMapBtn = document.getElementById('backToMapBtn');
+if (backToMapBtn) {
+    backToMapBtn.addEventListener('click', () => {
+        // Drop the overlay completely
+        if (mainMenu) mainMenu.style.display = 'none';
+        
+        // Route the application container back to your green layout map
+        gameContainer.className = 'state-map';
+    });
+}
+
+// Navigation Back To Map Controller
+const invBackToMapBtn = document.getElementById('invBackToMapBtn');
+if (invBackToMapBtn) {
+    invBackToMapBtn.addEventListener('click', () => {
+        const invMenu = document.getElementById('inventoryMenu');
+        if (invMenu) invMenu.style.display = 'none';
+        
+        // Return visibility back onto the main map overlay layer
+        gameContainer.className = 'state-map';
+    });
+}
+
+// Next Page Arrow Handler
+const invNextPageBtn = document.getElementById('invNextPageBtn');
+if (invNextPageBtn) {
+    invNextPageBtn.addEventListener('click', () => {
+        const totalPages = Math.max(1, Math.ceil(caughtFishInventory.length / slotsPerPage));
+        
+        if (currentInventoryIndex < totalPages) {
+            currentInventoryIndex++;
+        } else {
+            currentInventoryIndex = 1; // Loops right back around to page 1
+        }
+        renderInventoryGrid();
     });
 }
 
@@ -494,6 +895,12 @@ document.querySelectorAll('.map-node').forEach(node => {
 document.addEventListener('keydown', (event) => {
     if (event.key.toLowerCase() === 'r') {
         resetGame();
+    }
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key.toLowerCase() === 't') {
+        gameTimer=0; // Force timer to zero, triggering game over sequence immediately
     }
     
     if (event.key.toLowerCase() === 'tab') {
@@ -523,8 +930,8 @@ document.addEventListener('keydown', (event) => {
         
         if (hookState === 'REEL') {
             if (caughtFishElement) { 
-               if (!spacebarPressed) { 
-                reelVelocity -= 6.5; 
+               { 
+                reelVelocity -= 9.5; 
                }
             }
             spacebarPressed = true; 
@@ -553,7 +960,7 @@ requestAnimationFrame(tickFishAnimation);
 
 function handlePassiveReel() {
     if (isGameActive && hookState === 'REEL' && spacebarPressed && !caughtFishElement) {
-        reelVelocity -= 0.8; 
+        reelVelocity -= 0.3;  //low passive assist to the player 
     }
     requestAnimationFrame(handlePassiveReel);
 }
@@ -567,4 +974,5 @@ window.addEventListener('resize', () => {
             spawnFishSchool();
         }, 150);
     }
+
 });
