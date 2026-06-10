@@ -1,647 +1,689 @@
- * {
-            box-sizing: border-box; /* Fixed typo here */
-            margin: 0;
-            padding: 0;
-            user-select: none;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            user-select: none;
-            background-color: #fffff0;
-           
-        }
-        /* Main Menu Styles */
-        .menu-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(30, 41, 59, 0.85); /* Semi-transparent dark background */
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 10; /* Keeps it on top of the water and UI bars */
-        }
-      
-        .menu-box {
-            text-align: center;
-            padding: 30px 50px;
-            background: #2a4365;
-            border: 4px solid #fff;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        }
-
-        .menu-title {
-            color: #fff;
-            font-family: 'Courier New', Courier, monospace; /* Retro pixel feel */
-            font-size: 36px;
-            margin-bottom: 30px;
-            letter-spacing: 2px;
-        }
-
-        .menu-button {
-            padding: 12px 30px;
-            font-size: 18px;
-            font-family: inherit;
-            font-weight: bold;
-            color: #2a4365;
-            background-color: #fff;
-            border: 2px solid #cbd5e1;
-            cursor: pointer;
-            transition: transform 0.1s ease;
-        }
-
-        .menu-button:hover {
-            transform: scale(1.05);
-            background-color: #f1f5f9;
-        }
-
-        .game-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            background: #fff;
-            border-radius: 8px;
-            overflow: hidden;
-           
-        }
-      /* map layout  styles */
-     /* Screen Manager Absolute Toggles */
-        .screen { 
-            display: none; 
-            width: 100vw; 
-            height: 100vh; 
-            position: relative; 
-        }
-
-        /* State Management Pipeline Controllers */
-        #gameContainer.state-menu #mainMenu { display: flex; }
-        #gameContainer.state-map #mapMenu { display: block; }
-        #gameContainer.state-gameplay #gameplayScreen { display: block; }
-
-        /* Main Screen Wrapper Viewport */
-        #gameContainer {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            background: #fff;
-            overflow: hidden;
-        }
-        .lake-map {
-            width: 100%;
-            height: 100%;
-            background-color: #93c183; /* Green grass fields */
-            position: relative;
-        }
-
-        /* The giant blue pond background styling  */
-        .lake-map::before {
-            content: '';
-            position: absolute;
-            width: 85%;
-            height: 80%;
-            left: 7.5%;
-            top: 10%;
-            background-color: #0000ff; /* Bright blue lake */
-            border-radius: 50%;
-            border: 3px solid #4a4a4a;
-            z-index: 1;
-        }
-
-        /* Location Nodes style matching your mockup exactly */
-        .map-node {
-            position: absolute;
-            width: 150px;
-            height: 70px;
-            background-color: #5b8ad2;
-            border: 3px solid #4a4a4a;
-            border-radius: 50%;
-            font-size: 18px;
-            color: #333;
-            cursor: pointer;
-            z-index: 2;
-            transition: transform 0.1s ease;
-        }
-        .map-node:hover { transform: scale(1.08); background-color: #7ba6ea; }
-
-        /* Exact coordinate layout pinning nodes based on mockup positions */
-        .point-a   { left: 13%; top: 44%; }
-        .point-b1  { left: 75%; top: 45%; }
-        .point-b2  { left: 42%; top: 75%; }
-
-        /* Utility Bottom Buttons Layout */
-        .map-util {
-            position: absolute;
-            bottom: 25px;
-            padding: 15px 30px;
-            background-color: #eaeaea;
-            border: 1px solid #4a4a4a;
-            font-size: 16px;
-            z-index: 2;
-        }
-        .shop-btn { 
-            left: 40px;
-            color: #5b8ad2;
-         }
-        
-
-        .inventory-btn { 
-            right: 40px; 
-            color: #5b8ad2; 
-        }
-
-                /* Inventory Layout Screen Wrapper */
-        #inventoryMenu {
-            background-color: #ffffff; /* Matching your white background wireframe */
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100vw;
-            height: 100vh;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 100;
-            box-sizing: border-box;
-        }
-
-        .inventory-container {
-            padding: 20px;
-            height: 95vh;
-            width: 90vw;
-            max-width: 1200px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            box-sizing: border-box;
-        }
-
-        /* Header */
-        .inventory-header {
-            text-align: left;
-        }
-
-        .menu-button-alt {
-            padding: 8px 16px;
-            font-size: 16px;
-            cursor: pointer;
-            background: #ffffff;
-            border: 1px solid #000000;
-        }
-
-        /* 3 Rows x 4 Columns Grid Configuration */
-        .inventory-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            gap: 20px;
-            height: 65vh;
-            width: 100%;
-            flex-grow: 1;
-            margin: 20px 0;
-        }
-
-        /* Individual Boxes */
-        .inventory-slot {
-            background-color: #efefef;
-            border: 1px solid #767676;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            height: 100%;
-        }
-
-        /* The Fish Badges */
-        .fish-badge {
-            background-color: #ffffff;
-            border: 1px solid #000000;
-            border-radius: 50%; /* Forms the oval shape */
-            width: 85%;
-            padding: 12px 35px;
-            font-size: 18px;
-            text-align: center;
-        }
-
-        /* Footer & Pagination elements */
-        .inventory-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 100%;
-            width: 50px;
-            gap: 15px;
-            margin-top: auto;  /* Forces structural alignment to the bottom edge */
-        }
-
-        .page-number {
-            font-size: 24px;
-            color: #333333;
-        }
-
-        .next-arrow-btn {
-            background: none;
-            border: none;
-            font-size: 36px;
-            cursor: pointer;
-            color: #767676;
-            transition: color 0.2s;
-        }
-
-        .next-arrow-btn:hover {
-            color: #000000;
-        }
-
-
-                /* --- SHOP SYSTEM STYLE ARCHITECTURE --- */
-        #shopMenu {
-            background-color: #ffffff;
-            font-family: Arial, sans-serif;
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 100;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .shop-container {
-            width: 90vw;
-            max-width: 1200px;
-            height: 95vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 30px;
-            box-sizing: border-box;
-        }
-
-        /* Header Columns Alignment */
-        .shop-header-row {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            gap: 10%;
-        }
-
-        .shop-header-box {
-            width: 45%;
-            height: 60px;
-            border: 1px solid #767676;
-            background-color: #efefef;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
-            color: #000000;
-            text-transform: uppercase;
-            font-family: inherit;
-        }
-
-        .interactive-box {
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .interactive-box:hover {
-            background-color: #e0e0e0;
-        }
-
-        /* Item Selection Cards Grid */
-        .shop-main-content {
-            display: flex;
-            gap: 40px;
-            height: 65vh;
-            width: 100%;
-            margin-top: -60px; /* Pulls elements up into alignment with mockup */
-            flex-grow: 1;
-            align-items: center;
-        }
-
-        .shop-item-card {
-            width: 140px;
-            height: 140px;
-            background-color: #efefef;
-            border: 1px solid #767676;
-            font-size: 20px;
-            text-align: center;
-            cursor: pointer;
-            font-family: inherit;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 10px;
-            transition: transform 0.1s;
-        }
-        .shop-item-card:hover {
-            transform: scale(1.04);
-            background-color: #e0e0e0;
-        }
-
-        /* Footer Control Row */
-        .shop-footer-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-        }
-
-        .shop-text-btn {
-            background: none;
-            border: none;
-            font-size: 28px;
-            cursor: pointer;
-            color: #555555;
-            font-family: inherit;
-            padding: 0;
-        }
-        .shop-text-btn:hover {
-            color: #000000;
-            text-decoration: underline;
-        }
-
-        .shop-text-label {
-            font-size: 28px;
-            color: #333333;
-        }
-
-        /* UI Elements */
-        .ui-overlay {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            z-index: 10;
-            background: rgba(0,0,0,0.6);
-            padding: 10px 15px;
-            border-radius: 5px;
-            pointer-events: none;
-        }
-
-        .score-display {
-            font-size: 18px;
-            font-weight: bold;
-            color: #4ade80;
-        }
-        
-        .game-timer {
-           position: absolute;
-           top: 20px;
-           right: 20px;
-           font-family: 'Courier New', Courier, monospace; /* Matches retro style */
-           font-size: 24px;
-           font-weight: bold;
-           color: #ffffff;
-           background: rgba(0, 0, 0, 0.5); /* Semi-transparent background pad */
-           padding: 8px 16px;
-           border-radius: 4px;
-           border: 2px solid #ffffff;
-           z-index: 5; /* Ensures it sits above the water layout */
-         }
-
-        /* Reel Charge Meter */
-        .meter-container {
-            position: absolute;
-            top: 20px;
-            left: 200px;
-            width: 160px;
-            height: 35px;
-            background: #e2e8f0;
-            border: 2px solid #4e4e50;
-            border-radius: 20px;
-            overflow: hidden;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .meter-bar {
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #f59e0b, #ef4444);
-            transition: width 0.1s ease;
-        }
-
-        .meter-text {
-            position: relative;
-            z-index: 11;
-            font-size: 12px;
-            font-weight: bold;
-            color: #000;
-            text-transform: uppercase;
-        }
-
-        /* Environments */
-        .ground {
-            position: absolute;
-            left: 0;
-            bottom: 0;
-            width: 40%;
-            height: 65%;
-            background: #eaeaea;
-            border-top-right-radius: 40px;
-            border-right: 2px solid #ccc;
-            z-index: 2;
-        }
-
-        .water {
-            position: absolute;
-            right: 0;
-            bottom: 0;
-            width: 60%;
-            height: 65%;
-            background: #3b82f6;
-            z-index: 1;
-            overflow: hidden; /* Ensures fish don't overflow out of the water area */
-        }
-
-        /* Player & Rod */
-        .player {
-            position: absolute;
-            left: 10%;
-            bottom: 65%;
-            width: 170px;
-            height: 130px;
-            background: #eaeaea;
-            border: 2px solid #999;
-            border-bottom: none;
-            z-index: 3;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: #333;
-            font-size: 20px;
-        }
-
-        .rod-pivot {
-            position: absolute;
-            right: 0;
-            top: 40px;
-            width: 10px;
-            height: 10px;
-        }
-
-        .rod {
-            position: absolute;
-            top: -5px;
-            left: -10px;
-            width: 258px; /* Matches the 250px math + 10px pivot offset */
-            height: 14px;
-            background: #d1d5db;
-            border: 2px solid #6b7280;
-            transform-origin: 10px 7px;
-            transform: rotate(-15deg);
-           
-        }
-
-        /* Line and Hook */
-        .fishing-line {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 2px;
-            height: 0px;
-            background: #fff;
-            z-index: 2; /* Sits above player and rod, below fish and UI */
-            display: none;/* only drawn dynamically during physics animations */
-        }
-
-        .hook {
-            position: absolute;
-            bottom: -10px;
-            left: -4px;
-            width: 10px;
-            height: 15px;
-            border: 2px solid #111827;
-            border-top: none;
-            border-bottom-left-radius: 5px;
-            border-bottom-right-radius: 5px;
-        }
-
-         .aim-radius  {
-            position: absolute;
-            width: 60px;   /* Adjust this to change the size of your catch zone */
-            height: 60px;
-            border: 2px dashed #ffffff; /* Dashed line gives it a classic game UI look */
-            background: rgb(226, 39, 39); /* Translucent white center */
-            border-radius: 50%; /* Makes it a circle */
-            pointer-events: none; /* Prevents the circle from blocking clicks on the fish */
-            transform: translate(-50%, -50%); /* Centers the circle on your mouse */
-            z-index: 5;
-            display: none; /* Hide it by default, show it when the line is extended */
-         }
-         /* Trajectory Layer System */
-        .trajectory-svg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 4; /* Sits perfectly above environment, below UI */
-            pointer-events: none; /* Allows user to click straight through the line onto fish */
-            display: none; /* Controlled by JavaScript visibility parameters */
-        }
-
-        /* Make the casting arc glow like an indicator line */
-        #aimArc {
-            stroke: #ffffff;
-            filter: drop-shadow(0px 0px 4px rgba(59, 130, 246, 0.8));
-            transition: stroke 0.2s;
-        }
-
-        /* Style the landing indicator target circle */
-        #aimTarget {
-            transform-origin: center;
-            filter: drop-shadow(0px 0px 6px rgba(255, 255, 255, 0.5));
-        }
-          /*Make it pulse or change color when a fish is caught */
-          .fishing-line[style*="height: 120px"] .aim-radius {
-              border-color: #4ade80; /* Changes to green when the line is extended */
-              background: rgba(74, 222, 128, 0.2);
-        
-                }
-        
-
-        /* Entities */
-        .fish {
-            position: absolute;
-            width: 85px;
-            height: 35px;
-            background: #e2e8f0;
-            border: 2px solid #6b7280;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: #333;
-            font-size: 14px;
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-
-        .fish:hover {
-            transform: scale(1.05);
-            background: #cbd5e1;
-        }
-
-        /* Controls Prompt */
-        .instructions {
-            margin-top: 20px;
-            text-align: center;
-            color: #94a3b8;
-            max-width: 500px;
-            line-height: 1.5;
-        }
-
-        button {
-            margin-top: 15px;
-            padding: 10px 20px;
-            background: #3b82f6;
-            border: none;
-            border-radius: 5px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        button:hover { background: #2563eb; }
-
-
-        /* Animation for swimming left and right */
-@keyframes swim {
-    0% {
-        transform: translateX(0) scaleX(1);
-    }
-    49% {
-        transform: translateX(var(--swim-distance)) scaleX(1);
-    }
-    50% {
-        transform: translateX(var(--swim-distance)) scaleX(-1); /* Turn right */
-    }
-    99% {
-        transform: translateX(0) scaleX(-1);
-    }
-    100% {
-        transform: translateX(0) scaleX(1); /* Turn left */
-    }
+/* ==========================================================================
+   1. GLOBAL SYSTEM RESETS & BASE LAYER
+   ========================================================================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
 }
 
-/* Class applied to swimming fish */
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: #0f172a; /* Sleek dark backdrop */
+}
+
+/* ==========================================================================
+   2. SCREEN MANAGER VIEWPORT MATRIX
+   ========================================================================== */
+#gameContainer {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: #0f172a;
+    overflow: hidden;
+}
+
+.screen { 
+    display: none; 
+    width: 100vw; 
+    height: 100vh; 
+    position: relative; 
+}
+
+/* Pipeline Engine Controller Selectors */
+#gameContainer.state-menu #mainMenu { display: flex; }
+#gameContainer.state-map #mapMenu { display: block; }
+#gameContainer.state-gameplay #gameplayScreen { display: block; }
+
+/* ==========================================================================
+   3. OVERLAY MENUS (MAIN / PAUSE SYSTEM)
+   ========================================================================== */
+.menu-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(15, 23, 42, 0.9); /* Dark modern blurring overlay */
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+.menu-box {
+    text-align: center;
+    padding: 40px 60px;
+    background: #1e293b; /* Sleek dark slate premium box */
+    border: 3px solid #38bdf8; /* Glowing light blue trim */
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7);
+}
+
+.menu-title {
+    color: #f8fafc;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 38px;
+    font-weight: 900;
+    margin-bottom: 30px;
+    letter-spacing: 3px;
+    text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+}
+
+.menu-button {
+    padding: 14px 35px;
+    font-size: 18px;
+    font-family: inherit;
+    font-weight: bold;
+    color: #0f172a; /* Dark text for readability */
+    background-color: #38bdf8; /* Bright energetic action button */
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(56, 189, 248, 0.3);
+    transition: all 0.15s ease;
+}
+
+.menu-button:hover {
+    transform: translateY(-2px);
+    background-color: #7dd3fc;
+    box-shadow: 0 10px 15px -3px rgba(56, 189, 248, 0.5);
+}
+
+/* ==========================================================================
+   4. WORLD OVERWORLD NAVIGATION MAP
+   ========================================================================== */
+.lake-map {
+    width: 100%;
+    height: 100%;
+    background-color: #1e3a1e; /* Rich pine forest green */
+    position: relative;
+}
+
+.lake-map::before {
+    content: '';
+    position: absolute;
+    width: 85%;
+    height: 80%;
+    left: 7.5%;
+    top: 10%;
+    background: radial-gradient(circle, #0284c7 0%, #0369a1 100%); /* Premium fluid blue lake */
+    border-radius: 50%;
+    border: 4px solid #0f172a;
+    z-index: 1;
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.6);
+}
+
+.map-node {
+    position: absolute;
+    width: 150px;
+    height: 70px;
+    background-color: #f1f5f9; /* Modern badge look */
+    border: 3px solid #0369a1;
+    border-radius: 50%;
+    font-size: 18px;
+    font-weight: bold;
+    color: #0f172a; /* Crisp dark text */
+    cursor: pointer;
+    z-index: 2;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.map-node:hover { 
+    transform: scale(1.1) translateY(-4px); 
+    background-color: #38bdf8;
+    color: #ffffff;
+    border-color: #ffffff;
+}
+
+.point-a  { left: 13%; top: 44%; }
+.point-b1 { left: 75%; top: 45%; }
+.point-b2 { left: 42%; top: 75%; }
+
+.map-util {
+    position: absolute;
+    bottom: 25px;
+    padding: 15px 35px;
+    background-color: #1e293b; /* Slate matching menus */
+    border: 2px solid #475569;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    z-index: 2;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    transition: all 0.2s ease;
+}
+
+.map-util:hover {
+    border-color: #38bdf8;
+    background-color: #334155;
+}
+
+.shop-btn { 
+    left: 40px;
+    color: #38bdf8; /* Pops as bright electric blue */
+}
+
+.inventory-btn { 
+    right: 40px; 
+    color: #38bdf8; 
+}
+
+/* ==========================================================================
+   5. SCROLLABLE INFINITE INVENTORY DISPLAY
+   ========================================================================== */
+#inventoryMenu {
+    background-color: #0f172a; /* Dark theme layout base */
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    box-sizing: border-box;
+}
+
+.inventory-container {
+    padding: 30px;
+    height: 95vh;
+    width: 90vw;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-sizing: border-box;
+    background: #1e293b;
+    border-radius: 16px;
+    border: 2px solid #334155;
+}
+
+.inventory-header {
+    text-align: left;
+    margin-bottom: 15px;
+    color: #f8fafc;
+    font-size: 28px;
+}
+
+.menu-button-alt {
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    background: #334155;
+    border: 1px solid #475569;
+    color: #f8fafc;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.menu-button-alt:hover {
+    background: #475569;
+    color: #38bdf8;
+}
+
+#inventoryGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
+    gap: 15px;
+    padding: 15px;
+    width: 100%;
+    max-height: 450px;    
+    overflow-y: auto;     
+    box-sizing: border-box;
+    background: #0f172a;
+    border-radius: 12px;
+    border: 1px solid #334155;
+}
+
+/* Clean Custom Webkit Scrollbars */
+#inventoryGrid::-webkit-scrollbar {
+    width: 8px;
+}
+#inventoryGrid::-webkit-scrollbar-track {
+    background: #0f172a;
+}
+#inventoryGrid::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 4px;
+}
+#inventoryGrid::-webkit-scrollbar-thumb:hover {
+    background: #38bdf8;
+}
+
+.inventory-slot {
+    background: #1e293b;
+    border: 2px solid #334155;
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s;
+}
+.inventory-slot:hover {
+    border-color: #38bdf8;
+}
+
+.fish-badge {
+    background-color: #0f172a;
+    border: 1px solid #38bdf8;
+    color: #f8fafc;
+    border-radius: 20px;
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.inventory-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 50px;
+    width: auto;
+    gap: 15px;
+    margin-top: auto;
+}
+
+/* ==========================================================================
+   6. SHOPPING MARKET STORES GRID
+   ========================================================================== */
+#shopMenu {
+    background-color: #0f172a;
+    font-family: Arial, sans-serif;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.shop-container {
+    width: 90vw;
+    max-width: 1200px;
+    height: 95vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 30px;
+    box-sizing: border-box;
+    background: #1e293b;
+    border-radius: 16px;
+    border: 2px solid #334155;
+}
+
+.shop-header-row {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    gap: 10%;
+    position: relative;
+    z-index: 10;
+}
+
+.shop-header-box {
+    width: 45%;
+    height: 60px;
+    border: 1px solid #334155;
+    background-color: #0f172a;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 22px;
+    font-weight: bold;
+    color: #38bdf8; /* Vivid layout text headers */
+    text-transform: uppercase;
+    position: relative;
+}
+
+.interactive-box {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.interactive-box:hover {
+    background-color: #38bdf8;
+    color: #0f172a;
+    border-color: #ffffff;
+}
+
+.shop-main-content {
+    display: flex;
+    gap: 40px;
+    height: 65vh;
+    width: 100%;
+    flex-grow: 1;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+}
+
+.shop-item-card {
+    width: 150px;
+    height: 150px;
+    background-color: #0f172a;
+    border: 2px solid #334155;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #f8fafc;
+    text-align: center;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    transition: all 0.15s ease;
+}
+.shop-item-card:hover {
+    transform: scale(1.06) translateY(-4px);
+    background-color: #1e293b;
+    border-color: #38bdf8;
+    box-shadow: 0 10px 15px -3px rgba(56, 189, 248, 0.2);
+}
+
+/* Force specific operational functional items to black text style override profiles if injected */
+#buyBaitBtn, #upgradeInvBtn {
+    color: #000000 !important;
+}
+
+.shop-footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.shop-text-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #94a3b8;
+    font-family: inherit;
+    padding: 0;
+    transition: color 0.2s;
+}
+.shop-text-btn:hover {
+    color: #38bdf8;
+    text-decoration: none;
+}
+
+.shop-text-label {
+    font-size: 24px;
+    font-weight: bold;
+    color: #f8fafc;
+}
+
+/* ==========================================================================
+   7. CORE GAMEPLAY INTERFACE HUD & METERS
+   ========================================================================== */
+.ui-overlay {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    z-index: 10;
+    background: rgba(15, 23, 42, 0.85);
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    pointer-events: none;
+}
+
+.score-display {
+    font-size: 20px;
+    font-weight: bold;
+    color: #4ade80; /* Vibrant classic neon green score indicator */
+}
+
+.game-timer {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 26px;
+    font-weight: bold;
+    color: #f43f5e; /* Crisp warning rose/red tone */
+    background: rgba(15, 23, 42, 0.85);
+    padding: 8px 20px;
+    border-radius: 6px;
+    border: 2px solid #f43f5e;
+    z-index: 5;
+    box-shadow: 0 0 10px rgba(244, 63, 94, 0.3);
+}
+
+.meter-container {
+    position: absolute;
+    top: 20px;
+    left: 220px;
+    width: 180px;
+    height: 38px;
+    background: #0f172a;
+    border: 2px solid #334155;
+    border-radius: 20px;
+    overflow: hidden;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.meter-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #38bdf8, #3b82f6); /* Modern cyan to deep blue charge animation */
+    transition: width 0.1s ease;
+}
+
+.meter-text {
+    position: relative;
+    z-index: 11;
+    font-size: 13px;
+    font-weight: 900;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ==========================================================================
+   8. GAME SCENE HARDWARE, RIGS & ENTITIES
+   ========================================================================== */
+.ground {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 40%;
+    height: 65%;
+    background: #cbd5e1; /* Smooth slate sandy pier edge */
+    border-top-right-radius: 40px;
+    border-right: 4px solid #94a3b8;
+    z-index: 2;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.3);
+}
+
+.water {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 60%;
+    height: 65%;
+    background: linear-gradient(180deg, #0284c7 0%, #0c4a6e 100%); /* Deep rich underwater gradient */
+    z-index: 1;
+    overflow: hidden;
+    box-shadow: inset 20px 20px 40px rgba(0,0,0,0.4);
+}
+
+.player {
+    position: absolute;
+    left: 10%;
+    bottom: 65%;
+    width: 170px;
+    height: 130px;
+    background: #94a3b8;
+    border: 3px solid #475569;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #0f172a;
+    font-size: 20px;
+}
+
+.rod-pivot {
+    position: absolute;
+    right: 0;
+    top: 40px;
+    width: 10px;
+    height: 10px;
+}
+
+.rod {
+    position: absolute;
+    top: -5px;
+    left: -10px;
+    width: 258px;
+    height: 12px;
+    background: #e2e8f0; /* Silver carbon fiber pole look */
+    border: 2px solid #475569;
+    border-radius: 4px;
+    transform-origin: 10px 6px;
+    transform: rotate(-15deg);
+}
+
+.fishing-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2px;
+    height: 0px;
+    background: rgba(255, 255, 255, 0.85); /* High visibility clear line */
+    z-index: 2;
+    display: none;
+}
+
+.hook {
+    position: absolute;
+    bottom: -10px;
+    left: -4px;
+    width: 10px;
+    height: 15px;
+    border: 2px solid #f43f5e; /* Red safety tip tracker hook */
+    border-top: none;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+
+.aim-radius {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    border: 2px dashed #38bdf8;
+    background: rgba(56, 189, 248, 0.25);
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    display: none;
+}
+
+.trajectory-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 4;
+    pointer-events: none;
+    display: none;
+}
+
+#aimArc {
+    stroke: #38bdf8; /* Cyber neon trajectory path projection */
+    filter: drop-shadow(0px 0px 6px #38bdf8);
+}
+
+#aimTarget {
+    transform-origin: center;
+    stroke: #4ade80;
+    filter: drop-shadow(0px 0px 8px #4ade80);
+}
+
+.fish {
+    position: absolute;
+    width: 85px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent; /* Hides any old text labels */
+    cursor: pointer;
+    
+    /* ASSET LINKING */
+    background-image: url('Fish.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.fish:hover {
+    transform: scale(1.05);
+}
+
+/* ==========================================================================
+   9. MISC CONTROL UTILITIES & NATIVE ANIMATION DEFINITIONS
+   ========================================================================== */
+.instructions {
+    margin-top: 20px;
+    text-align: center;
+    color: #64748b;
+    max-width: 500px;
+    line-height: 1.5;
+}
+
+button {
+    margin-top: 15px;
+    padding: 12px 24px;
+    background: #3b82f6;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+button:hover { background: #1d4ed8; }
+
+@keyframes swim {
+    0% { transform: translateX(0) scaleX(1); }
+    49% { transform: translateX(var(--swim-distance)) scaleX(1); }
+    50% { transform: translateX(var(--swim-distance)) scaleX(-1); }
+    99% { transform: translateX(0) scaleX(-1); }
+    100% { transform: translateX(0) scaleX(1); }
+}
+
 .fish.swimming {
     animation: swim var(--swim-duration) linear infinite;
 }
-    
