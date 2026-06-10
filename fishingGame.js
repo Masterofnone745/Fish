@@ -355,7 +355,7 @@ function updatePhysicsLoop() {
         score++;
         if(scoreDisplay) scoreDisplay.innerText = score;
 
-        gameTimer += Math.round(finalWeight * 1); // Reward extra time for successful catch
+        gameTimer += Math.round(finalWeight * 0.5); // Reward extra time for successful catch
 
        if(timerDisplay) {
         timerDisplay.innerText = `Time: ${gameTimer}`;
